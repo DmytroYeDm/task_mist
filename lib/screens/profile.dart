@@ -228,8 +228,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
 
     final interestsValue = _profileService.interests.isNotEmpty
-        ? _profileService.interests
-        : '-';
+        ? _profileService.interests : '-';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
@@ -239,7 +238,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             shape: BoxShape.circle,
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.15),
+                color: Colors.black.withValues(alpha: 0.15),
                 spreadRadius: 2,
                 blurRadius: 10,
                 offset: const Offset(0, 5),

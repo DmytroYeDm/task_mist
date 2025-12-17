@@ -9,7 +9,7 @@ class ProfileService {
 
   ProfileService._internal();
 
-  static const String photoAssetPath = 'lib/assets/photo.png';
+  static const String photoAssetPath = "lib/assets/photo.png";
 
   String _name = '';
   String _studentId = '';

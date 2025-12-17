@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:translator/translator.dart';
 import '../models/habit_model.dart';
 
 class HealthScreen extends StatefulWidget {
@@ -9,6 +12,10 @@ class HealthScreen extends StatefulWidget {
 }
 
 class _HealthScreenState extends State<HealthScreen> {
+  final GoogleTranslator _translator = GoogleTranslator();
+  List<String> _advices = [];
+  bool _isLoading = false;
+
   final List<Habit> _habits = [
     Habit(
         title: "Випити 1.5 літрів води",
@@ -47,9 +54,45 @@ class _HealthScreenState extends State<HealthScreen> {
     )
   ];
 
+  @override
+  void initState() {
+    super.initState();
+    _fetchAndTranslateAdvices();
+  }
+
+  Future<void> _fetchAndTranslateAdvices() async {
+    try {
+      final requests = List.generate(3, (index) =>
+          http.get(Uri.parse('https://api.adviceslip.com/advice?t=${DateTime.now().millisecondsSinceEpoch + index}'))
+      );
+
+      final responses = await Future.wait(requests);
+      List<String> translatedTexts = [];
+
+      for (var response in responses) {
+        if (response.statusCode == 200) {
+          final data = json.decode(response.body);
+          String englishText = data['slip']['advice'];
+          var translation = await _translator.translate(englishText, from: 'en', to: 'uk');
+          translatedTexts.add(translation.text);
+        }
+      }
+
+      if (mounted) {
+        setState(() {
+          _advices = translatedTexts;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
   void _checkHealth() {
-    final completedCount =
-        _habits.where((habit) => habit.isCompleted).length;
+    final completedCount = _habits.where((habit) => habit.isCompleted).length;
     final totalCount = _habits.length;
 
     String title;
@@ -64,14 +107,12 @@ class _HealthScreenState extends State<HealthScreen> {
       color = Colors.green;
     } else if (completedCount >= totalCount * 0.5) {
       title = "Добре!";
-      message =
-      "Ви виконали більшість звичок. Непоганий день! Спробуйте завтра виконати більше";
+      message = "Ви виконали більшість звичок. Непоганий день! Спробуйте завтра виконати більше";
       icon = Icons.thumb_up;
       color = Colors.amber;
     } else {
       title = "Погано!";
-      message =
-      "Ви виконали менше половини звичок. Не слід забувати про своє здоров'я";
+      message = "Ви виконали менше половини звичок. Не слід забувати про своє здоров'я";
       icon = Icons.warning;
       color = Colors.red;
     }
@@ -87,14 +128,11 @@ class _HealthScreenState extends State<HealthScreen> {
               Text(title, style: TextStyle(color: color)),
             ],
           ),
-          content: Text(
-              "$message (Виконано: $completedCount з $totalCount)"),
+          content: Text("$message (Виконано: $completedCount з $totalCount)"),
           actions: <Widget>[
             TextButton(
               child: const Text("Зрозуміло"),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
+              onPressed: () => Navigator.of(context).pop(),
             ),
           ],
         );
@@ -102,7 +140,7 @@ class _HealthScreenState extends State<HealthScreen> {
     );
   }
 
-  Widget _buildHabitCard(Habit habit, int index) {
+  Widget _buildHabitCard(Habit habit) {
     return Card(
       margin: const EdgeInsets.only(bottom: 15),
       elevation: 2,
@@ -132,11 +170,10 @@ class _HealthScreenState extends State<HealthScreen> {
                       decorationThickness: 2,
                       decorationColor: Colors.black,
                     ),
-                    maxLines: 1, // <--- Виправлення: обмежуємо заголовок
-                    overflow: TextOverflow.ellipsis, // <--- Виправлення: додаємо "..."
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 5),
-
                   Row(
                     children: [
                       Icon(habit.icon, size: 16, color: Colors.grey.shade600),
@@ -154,7 +191,6 @@ class _HealthScreenState extends State<HealthScreen> {
                 ],
               ),
             ),
-
             Checkbox(
               value: habit.isCompleted,
               activeColor: Colors.green,
@@ -183,6 +219,69 @@ class _HealthScreenState extends State<HealthScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  "Хвилинка мудрості:",
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+                if (!_isLoading)
+                  IconButton(
+                    icon: const Icon(Icons.refresh, size: 20, color: Colors.blue),
+                    onPressed: () {
+                      setState(() => _isLoading = true);
+                      _fetchAndTranslateAdvices();
+                    },
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                  )
+                else
+                  const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 10),
+
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: Colors.blue.shade300, width: 1.5),
+                color: Colors.white,
+              ),
+              child: (_advices.isEmpty && _isLoading)
+                  ? const Center(child: Padding(
+                padding: EdgeInsets.all(10.0),
+                child: CircularProgressIndicator(),
+              ))
+                  : Column(
+                children: _advices.isNotEmpty
+                    ? _advices.asMap().entries.map((entry) {
+                  int idx = entry.key;
+                  return Container(
+                    width: double.infinity,
+                    margin: EdgeInsets.only(bottom: idx != _advices.length - 1 ? 8 : 0),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.blue.shade50,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.blue.shade100),
+                    ),
+                    child: Text(
+                      entry.value,
+                      style: const TextStyle(fontStyle: FontStyle.italic, color: Colors.black87),
+                    ),
+                  );
+                }).toList()
+                    : [const Text("Натисніть оновити, щоб отримати поради", style: TextStyle(color: Colors.grey))],
+              ),
+            ),
+
+            const SizedBox(height: 25),
             const Padding(
               padding: EdgeInsets.only(bottom: 10),
               child: Text(
@@ -191,9 +290,7 @@ class _HealthScreenState extends State<HealthScreen> {
               ),
             ),
 
-            ..._habits.asMap().entries.map((entry) {
-              return _buildHabitCard(entry.value, entry.key);
-            }).toList(),
+            ..._habits.map((habit) => _buildHabitCard(habit)).toList(),
 
             const SizedBox(height: 30),
 
