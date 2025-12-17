@@ -1,16 +1,16 @@
-# mist_task
+# Про додаток
+Простий додаток, що дозволяє створити список завдань з дедлайнами та вивести інформацію
+## Функціонал
+- Отримання даних через API.
+- Створення та видалення завдань з дедлайнами.
+- Відображення інформації про користувача, що бува введена ним.
+- Перевірка кількості виконаних за день здорових звичок.
+## Встановлення
+1. Клонуйте репозиторій: `git clone
+https://github.com/DmytroYeDm/task_mist.git`
+2. Відкрийте проєкт у Android Studio або Xcode.
+3. Запустіть емулятор або підключіть пристрій.
+## Скріншоти
+![Головна сторінка](lib/screenshots/home_page.png)
+![Сторінка здоров'я](lib/screenshots/health_page.png)
 
-A new Flutter project.
-
-## Getting Started
-
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
